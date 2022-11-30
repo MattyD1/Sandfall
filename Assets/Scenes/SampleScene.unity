@@ -287,7 +287,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
   material: {fileID: 10302, guid: 0000000000000000f000000000000000, type: 0}
-  chunkSize: 40
+  chunkSize: 25
+  density: 10
+  movement: {x: 1, y: 1}
+  resistance: 0.3
+  fluid: 1
+  antiGravity: 1
+  customColor: {r: 1, g: 0.86286664, b: 0.4009434, a: 0}
 --- !u!1 &1617349856
 GameObject:
   m_ObjectHideFlags: 0

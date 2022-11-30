@@ -13,6 +13,12 @@ public struct Cell
     public bool IsFalling;
     public float InertiaResistance;
 
+    public bool Fluid;
+    public bool AntiGravity;
+    
+    // Custom Cell Options
+    
+
     public Cell(int cellId, int density)
     {
         CellId = cellId;
@@ -20,6 +26,8 @@ public struct Cell
         Movement = new Vector2Int(0, 0);
         IsFalling = false;
         InertiaResistance = 0.0f;
+        Fluid = false;
+        AntiGravity = false;
     }
     public Cell(int cellId, int density, Vector2Int movement, bool falling, float resistance)
     {
@@ -28,6 +36,19 @@ public struct Cell
         Movement = movement;
         IsFalling = falling;
         InertiaResistance = resistance;
+        Fluid = false;
+        AntiGravity = false;
+    }
+
+    public Cell(int cellId, int density, Vector2Int movement, bool falling, float resistance, bool fluid, bool antiGravity)
+    {
+        CellId = cellId;
+        Density = density;
+        Movement = movement;
+        IsFalling = falling;
+        InertiaResistance = resistance;
+        AntiGravity = antiGravity;
+        Fluid = fluid;
     }
 }
 
@@ -37,6 +58,15 @@ public class Simulation : MonoBehaviour
     [SerializeField] private Mesh mesh;
     [SerializeField] private Material material;
     [SerializeField] private int chunkSize;
+    
+    // Custom Cell Options
+    [SerializeField] private int density;
+    [SerializeField] private Vector2Int movement;
+    [SerializeField] private float resistance;
+    [SerializeField] private bool fluid;
+    [SerializeField] private bool antiGravity;
+    [SerializeField] private Color customColor;
+    
 
     // Cell Variables
     private const int Gravity = 1;
@@ -53,8 +83,6 @@ public class Simulation : MonoBehaviour
     private static readonly Cell DirtCell = new(4, 10, new Vector2Int(1, Gravity), true, 0.5f);
     private static readonly Cell CoalCell = new(5, 10, new Vector2Int(1, Gravity), true, 0.75f);
 
-    
-    
     private List<GameObject> _objects;
     private Cell[] _cellData;
     private Vector3 _originPosition;
@@ -83,8 +111,10 @@ public class Simulation : MonoBehaviour
             SetValue(mousePosition, 4);
         if(Input.GetKey(KeyCode.C))
             SetValue(mousePosition, 5);
+        if (Input.GetKey(KeyCode.U))
+            SetValue(mousePosition, 100);
 
-        if(Time.frameCount % 5 == 0)
+        if(Time.frameCount % 1 == 0)
             UpdateGrid();
     }
 
@@ -104,8 +134,23 @@ public class Simulation : MonoBehaviour
                     UpdateDirt(x, y);
                 if(_cellData[i].CellId == 5)
                     UpdateCoal(x, y);
+                if(_cellData[i].CellId == 5)
+                    UpdateCoal(x, y);
+                if (_cellData[i].CellId == 100)
+                    UpdateCustom(x, y);
             }
         }
+
+        // for (int y = 0; y < chunkSize; y++)
+        // {
+        //     for (int x = chunkSize - 1; x >= 0; x--)
+        //     {
+        //         var i = x * chunkSize + y;
+                
+        //         if (_cellData[i].CellId == 100 && _cellData[i].AntiGravity)
+        //             UpdateCustom(x, y);
+        //     }
+        // }
     }
 
     private void UpdateSand(int x, int y)
@@ -116,13 +161,10 @@ public class Simulation : MonoBehaviour
         var releaseChance = Random.value;
         var isReleased = releaseChance > currentCell.InertiaResistance;
 
-        Debug.Log(currentCell.IsFalling);
-        Debug.Log(currentCell.CellId);
-        
         if (moveDown != currentLocation)
         {
             _cellData[x * chunkSize + y].IsFalling = true;
-            if (isReleased) UpdateFreeFalling(x, y);
+            // if (isReleased) UpdateFreeFalling(x, y);
             Swap(x,y,moveDown.x, moveDown.y);
             return;
         }
@@ -157,9 +199,6 @@ public class Simulation : MonoBehaviour
         var currentCell = _cellData[x * chunkSize + y];
         var releaseChance = Random.value;
         var isReleased = releaseChance > currentCell.InertiaResistance;
-
-        Debug.Log(currentCell.IsFalling);
-        Debug.Log(currentCell.CellId);
         
         if (moveDown != currentLocation)
         {
@@ -200,9 +239,6 @@ public class Simulation : MonoBehaviour
         var releaseChance = Random.value;
         var isReleased = releaseChance > currentCell.InertiaResistance;
 
-        Debug.Log(currentCell.IsFalling);
-        Debug.Log(currentCell.CellId);
-        
         if (moveDown != currentLocation)
         {
             _cellData[x * chunkSize + y].IsFalling = true;
@@ -286,10 +322,77 @@ public class Simulation : MonoBehaviour
 
 
     }
+
+    private void UpdateCustom(int x, int y)
+    {
+        var currentLocation = new Vector2Int(x, y);
+        var currentCell = _cellData[x * chunkSize + y];
+        var up = currentCell.AntiGravity ? 1 : -1;
+
+        var moveDown = SwapWith(x, y, 0, up, currentCell);
+        var releaseChance = Random.value;
+        var isReleased = releaseChance > currentCell.InertiaResistance;
+        
+        if (moveDown != currentLocation)
+        {
+            _cellData[x * chunkSize + y].IsFalling = true;
+            if (isReleased) UpdateFreeFalling(x, y);
+            Swap(x,y,moveDown.x, moveDown.y);
+            return;
+        }
+
+        if (currentCell.IsFalling && isReleased || currentCell.Fluid)
+        {
+            var moveRightDown = SwapWith(x, y, 1, up, currentCell);
+
+            if (moveRightDown != currentLocation)
+            {
+                UpdateFreeFalling(x, y);
+                Swap(x,y,moveRightDown.x, moveRightDown.y);
+                return;
+            }
+        
+            var moveLeftDown = SwapWith(x, y, -1, up, currentCell);
+            if (moveLeftDown != currentLocation)
+            {
+                UpdateFreeFalling(x, y);
+                Swap(x,y,moveLeftDown.x, moveLeftDown.y);
+                return;
+            }
+
+            if(currentCell.Fluid){
+                var moveLeft = SwapWith(x, y, -1, 0, currentCell);
+                var moveRight = SwapWith(x, y, 1, 0, currentCell);
+
+                var availableDirs = currentLocation != moveLeft && currentLocation != moveRight;
+                var dirChange = Random.value;
+                if (availableDirs)
+                {
+                    if (dirChange > 0.5f)
+                    {
+                        Swap(x, y, moveRight.x, moveRight.y);
+                    }
+                    else
+                    { 
+                        Swap(x,y, moveLeft.x, moveLeft.y);
+                    }
+                }
+                else
+                {
+                    if(moveRight != currentLocation)
+                        Swap(x,y, moveRight.x, moveRight.y);
+                    else
+                        Swap(x,y, moveLeft.x, moveLeft.y);
+                }
+            }
+        }
+        
+        _cellData[x * chunkSize + y].IsFalling = false;
+    }
     
     private bool CanSwap(int x, int y, Cell cell)
     {
-        if (y < 0 || x < 0 || x >= chunkSize)
+        if (y < 0 || x < 0 || x >= chunkSize || y >= chunkSize)
             return false;
 
         var density = cell.Density;
@@ -302,7 +405,6 @@ public class Simulation : MonoBehaviour
         var finalY = y + yDir * cell.Movement.y;
         var previousX = x;
         var previousY = y;
-
         for (var i = 1; i <= cell.Movement.x + 1; i++)
         {
             for (var j = 1; j <= cell.Movement.y + 1; j++)
@@ -321,7 +423,6 @@ public class Simulation : MonoBehaviour
 
     private void Swap(int xInit, int yInit, int xFinal, int yFinal)
     {
-
         var iInit = xInit * chunkSize + yInit;
         var iFinal = xFinal * chunkSize + yFinal;
 
@@ -360,7 +461,6 @@ public class Simulation : MonoBehaviour
                 _cellData[index].IsFalling = true;
             }
         }
-        Debug.Log("End" + x);
     }
 
     
@@ -424,7 +524,6 @@ public class Simulation : MonoBehaviour
 
     private void SetValue(int x, int y, int id)
     {
-        
         if (x < 0 || y < 0 || x >= chunkSize || y >= chunkSize) return;
         var i = x * chunkSize + y;
         if (_cellData[i].CellId != 0 && id != 0) return;
@@ -469,6 +568,12 @@ public class Simulation : MonoBehaviour
                 var coalCell = Color.HSVToRGB(.5f, 0.09f, Random.Range(0.0f, 0.15f));
                 _cellData[i] = CoalCell;
                 _objects[i].GetComponent<MeshRenderer>().material.color = coalCell;
+                break;
+            }
+            case 100:
+            {
+                _cellData[i] = new Cell(100, density, movement, true, resistance, fluid, antiGravity);
+                _objects[i].GetComponent<MeshRenderer>().material.color = customColor;
                 break;
             }
         }
