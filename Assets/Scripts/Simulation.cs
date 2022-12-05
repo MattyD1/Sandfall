@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 using CodeMonkey.Utils;
+using UnityEngine.UI;
 
 public struct Cell
 {
@@ -17,7 +18,7 @@ public struct Cell
     public bool AntiGravity;
     
     // Custom Cell Options
-    
+
 
     public Cell(int cellId, int density)
     {
@@ -67,12 +68,19 @@ public class Simulation : MonoBehaviour
     [SerializeField] private bool antiGravity;
     [SerializeField] private Color customColor;
     
+    // Gui
+    [SerializeField] private Toggle fluidToggle;
+    [SerializeField] private Toggle antiGravityToggle;
+    [SerializeField] private Slider resistanceToggle;
+    [SerializeField] private Slider densityToggle;
+    [SerializeField] private FlexibleColorPicker fcp;
+    
 
     // Cell Variables
     private const int Gravity = 1;
 
     // Colors
-    private static readonly Color EmptyColor = Color.HSVToRGB(0.0f,0.0f,0.27f);
+    private static readonly Color EmptyColor = Color.HSVToRGB(0.0f,0.0f,0.15f);
     private static readonly Color DebugColor = Color.cyan;
     
     // Cells
@@ -114,7 +122,7 @@ public class Simulation : MonoBehaviour
         if (Input.GetKey(KeyCode.U))
             SetValue(mousePosition, 100);
 
-        if(Time.frameCount % 1 == 0)
+        if(Time.frameCount % 5 == 0)
             UpdateGrid();
     }
 
@@ -572,8 +580,8 @@ public class Simulation : MonoBehaviour
             }
             case 100:
             {
-                _cellData[i] = new Cell(100, density, movement, true, resistance, fluid, antiGravity);
-                _objects[i].GetComponent<MeshRenderer>().material.color = customColor;
+                _cellData[i] = new Cell(100, (int)densityToggle.value, movement, true, resistanceToggle.value, fluidToggle.isOn, antiGravityToggle.isOn);
+                _objects[i].GetComponent<MeshRenderer>().material.color = fcp.color;
                 break;
             }
         }
