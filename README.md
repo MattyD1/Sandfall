@@ -35,6 +35,8 @@ The beauty in cellular automatons is that you can create incredibly complex beha
 
 From here, we can create many different fluids and solids; however, they will all act the same. They will sit on each other, and solids will only form triangular piles. To address this in my simulation, I added inertial resistance and density. The basic idea is that each cell will check the density of its neighbours instead of if it's "empty." Now for solids, there will be a chance (based on the inertial resistance) that the cell won't move down to the left or right. We can then add higher resistance to different elements to create sand, dirt and stone, and all have them act slightly differently.
 
+https://user-images.githubusercontent.com/59319360/208177722-2fac515f-d1dc-476a-8e1b-7ffabe90f5c4.mp4
+
 ## Making It Fun
 
 Now that I had a decently complex simulation with fluids and solids, where each cell acted on simulated density and inertia, I set out to give the player more freedom. Which turned into adding a simple GUI and allowing them to create their own cells by adjusting the variables. The GUI enabled the player to create a fluid, solid, inverse gravity, change the resistance, and the density of the cell, and finally, change the cell's colour. I also added an eraser so players could remove any mistakes. Which all led to absolute chaos, but it was fun chaos.
